@@ -1,0 +1,161 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+source /data/data/com.termux/files/usr/etc/termux-desktop/common_functions
+
+# This code block is taken from:- https://github.com/termux/proot-distro/blob/master/proot-distro.sh#L172C1-L184C1
+TRACER_PID=$(grep TracerPid "/proc/$$/status" | cut -d $'\t' -f 2)
+if [ "$TRACER_PID" != 0 ]; then
+	TRACER_NAME=$(grep Name "/proc/${TRACER_PID}/status" | cut -d $'\t' -f 2)
+	if [ "$TRACER_NAME" = "proot" ]; then
+		msg
+		print_failed "tx11start command should not be executed under PRoot.${W}"
+		msg
+		exit 1
+	fi
+	unset TRACER_NAME
+fi
+unset TRACER_PID
+
+    # Initialize flags
+    use_nogpu=false
+    use_nodbus=false
+    use_legacy=false
+    use_debug=false
+    de_startup="startxfce4"
+
+    # Function to show help
+    function show_tx11start_help() {
+      echo -e "
+tx11start                               - Start Termux:X11 with GPU acceleration
+tx11start --nogpu                       - Start without GPU acceleration
+tx11start --nodbus                      - Start without dbus
+tx11start --legacy                      - Start with -legacy-drawing
+tx11start --debug                       - Show debug log
+tx11start --xstartup "xstartup-name"    - Launch another desktop environment
+"
+      exit 0
+    }
+
+    # Parse arguments
+    while (($# >= 1)); do
+      case "$1" in
+      --help)
+        show_tx11start_help
+        ;;
+      --xstartup | -xstartup)
+          shift
+          de_startup="$1"
+          echo "$de_startup" > "/data/data/com.termux/files/home/.xstartup"
+          ;;
+      --nogpu | --no-gpu)
+        use_nogpu=true
+        ;;
+      --nodbus | --no-dbus)
+        use_nodbus=true
+        ;;
+      --legacy)
+        use_legacy=true
+        ;;
+      --debug)
+        use_debug=true
+        ;;
+      *)
+        echo "Invalid option: $1"
+        show_tx11start_help
+        ;;
+      esac
+      shift
+    done
+
+    # Kill existing Termux X11 processes
+    pkill -f com.termux.x11 >/dev/null 2>&1
+    pkill -9 "$de_startup" >/dev/null 2>&1
+
+    # Ensure XDG_RUNTIME_DIR exists
+    export XDG_RUNTIME_DIR=/data/data/com.termux/files/usr/tmp
+    mkdir -p "$XDG_RUNTIME_DIR"
+
+    # Export DISPLAY variable
+    export DISPLAY=:0
+
+    # Start pulseaudio unless --help was given
+    if [[ "$1" != "--help" ]]; then
+      termux-wake-lock
+      if $use_debug; then
+          rm -rf ~/.config/pulse/*-runtime/pid
+      else
+          rm -rf ~/.config/pulse/*-runtime/pid >/dev/null 2>&1
+      fi
+      # pulseaudio --start --load="module-aaudio-sink" --exit-idle-time=-1
+      pulseaudio --start --exit-idle-time=-1
+      pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1
+      if $use_debug; then
+        pactl load-module module-sles-source
+      else
+        pactl load-module module-sles-source >/dev/null 2>&1
+      fi
+    fi
+
+    # Set environment variables if NOT using --nogpu
+    if ! $use_nogpu; then
+      export MESA_NO_ERROR=1 MESA_GL_VERSION_OVERRIDE=4.3COMPAT MESA_GLES_VERSION_OVERRIDE=3.2
+      export VK_ICD_FILENAMES=/data/data/com.termux/files/usr/share/vulkan/icd.d/wrapper_icd.aarch64.json MESA_SHADER_CACHE=512MB MESA_SHADER_CACHE_DISABLE=false vblank_mode=0 GALLIUM_DRIVER=zink
+  else
+        export LIBGL_ALWAYS_SOFTWARE=1 MESA_LOADER_DRIVER_OVERRIDE=llvmpipe GALLIUM_DRIVER=llvmpipe
+    fi
+
+    sleep 1
+
+    # Construct X11 command
+    # x11_cmd="XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR} termux-x11 :0" # Comment this because i found that the sound doesn't working if i set this XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
+     if $use_nogpu; then
+         x11_cmd="LIBGL_ALWAYS_SOFTWARE=1 termux-x11 :0"
+     else
+         x11_cmd="termux-x11 :0"
+     fi
+
+    if $use_legacy; then
+      x11_cmd+=" -legacy-drawing"
+    fi
+
+    # Start X11
+    if $use_debug; then
+      eval "$x11_cmd" &
+    else
+      eval "$x11_cmd" >/dev/null 2>&1 &
+    fi
+    sleep 1
+
+    # Start X11 Main Activity
+    if $use_debug; then
+      am start --user 0 -n com.termux.x11/com.termux.x11.MainActivity
+    else
+      am start --user 0 -n com.termux.x11/com.termux.x11.MainActivity >/dev/null 2>&1
+    fi
+    sleep 1
+
+    # Start the desktop environment
+    if $use_nodbus; then
+      if $use_debug; then
+        env DISPLAY=:0 XDG_CONFIG_DIRS=/data/data/com.termux/files/usr/etc/xdg $de_startup &
+      else
+        env DISPLAY=:0 XDG_CONFIG_DIRS=/data/data/com.termux/files/usr/etc/xdg $de_startup >/dev/null 2>&1 &
+      fi
+    else
+      if $use_debug; then
+        env DISPLAY=:0 XDG_CONFIG_DIRS=/data/data/com.termux/files/usr/etc/xdg dbus-launch --exit-with-session $de_startup &
+      else
+        env DISPLAY=:0 XDG_CONFIG_DIRS=/data/data/com.termux/files/usr/etc/xdg dbus-launch --exit-with-session $de_startup >/dev/null 2>&1 &
+      fi
+    fi
+
+# Kill xfce4-screensaver if running
+sleep 5
+process_id=$(ps aux | grep '[x]fce4-screensaver' | awk '{print $2}')
+if [[ -n "$process_id" ]]; then
+	if $use_debug; then
+		kill "$process_id"
+	else
+    	kill "$process_id" > /dev/null 2>&1
+	fi
+fi

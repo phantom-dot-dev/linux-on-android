@@ -1,0 +1,52 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+source /data/data/com.termux/files/usr/etc/termux-desktop/common_functions
+
+# This code block is taken from:- https://github.com/termux/proot-distro/blob/master/proot-distro.sh#L172C1-L184C1
+TRACER_PID=$(grep TracerPid "/proc/$$/status" | cut -d $'\t' -f 2)
+if [ "$TRACER_PID" != 0 ]; then
+	TRACER_NAME=$(grep Name "/proc/${TRACER_PID}/status" | cut -d $'\t' -f 2)
+	if [ "$TRACER_NAME" = "proot" ]; then
+		msg
+		print_failed "tx11stop command should not be executed under PRoot.${W}"
+		msg
+		exit 1
+	fi
+	unset TRACER_NAME
+fi
+unset TRACER_PID
+
+termux-wake-unlock
+
+if [[ -f "/data/data/com.termux/files/home/.xstartup" ]]; then
+    de_startup=$(cat "/data/data/com.termux/files/home/.xstartup")
+else
+    de_startup="startxfce4"
+fi
+
+termux_x11_pid=$(pgrep -f "/system/bin/app_process / com.termux.x11.Loader :0")
+de_pid=$(pgrep -f $de_startup)
+if [[ -n "$termux_x11_pid" ]] || [[ -n "$de_pid" ]]; then
+kill -9 "$termux_x11_pid" > /dev/null 2>&1
+pkill -9 pulseaudio > /dev/null 2>&1
+killall virgl_test_server > /dev/null 2>&1
+pkill -9 xfce-* > /dev/null 2>&1
+pkill -9 dbus-* > /dev/null 2>&1
+pkill -f com.termux.x11 > /dev/null 2>&1
+	if [[ ! -n "$termux_x11_pid" ]] || [[ ! -n "$de_pid" ]]; then
+	echo -e "[0m[32mTermux:X11 Stopped Successfully [0m"
+    [[ -f "/data/data/com.termux/files/home/.xstartup" ]] && rm -rf "/data/data/com.termux/files/home/.xstartup"
+	fi
+elif [[ "$1" == "-f" ]] || [[ "$1" == "--force" ]]; then
+pkill -f com.termux.x11 > /dev/null 2>&1
+pkill -9 xfce-* > /dev/null 2>&1
+killall virgl_test_server > /dev/null 2>&1
+pkill -9 pulseaudio > /dev/null 2>&1
+pkill -9 dbus-* > /dev/null 2>&1
+echo -e "[0m[32mTermux:X11 Successfully Force Stopped [0m"
+[[ -f "/data/data/com.termux/files/home/.xstartup" ]] && rm -rf "/data/data/com.termux/files/home/.xstartup"
+elif [[ "$1" == "-h" ]]; then
+echo -e "tx11stop       to stop termux:x11"
+echo -e "tx11stop -f    to kill termux:x11"
+fi
+exec 2>/dev/null
