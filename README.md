@@ -19,4 +19,15 @@ pkg install ffmpeg                   # OPTIONAL: Install ffmpeg
 
 customizing: run `xfce4-settings-manager` command and change `window manager` -> shortcut settings
 
+### Performance:
+Always keep the launching termux terminal open (behing the desktop). And must not minimized
+
+
+While on xfce de, if mouse wheel is acting weird, like zooming, press `alt` once to fix.
+Also, `alt + mouse-wheel` is used to zoom in/out the x11 de interface. 
+
+* If `cmd + d` is pressed, all running apps in current desktop in android will be minimized, it will degrade the performance of the termux desktop. To fix keep open both termux terminal and x11 app. No need to restart everything.
+
+
+
 
