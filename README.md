@@ -19,6 +19,9 @@ pkg install ffmpeg                   # OPTIONAL: Install ffmpeg
 
 customizing: run `xfce4-settings-manager` command and change `window manager` -> shortcut settings
 
+`alt + esc` (customized) for `application finder`
+`alt + backticks` for triggering code suggession in `code oss`
+
 ### Performance:
 Always keep the launching termux terminal open (behing the desktop). And must not minimized
 
