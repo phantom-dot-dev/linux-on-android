@@ -8,19 +8,28 @@ Add the to the settings.json
   "workbench.colorCustomizations": {
     "[Default High Contrast]": {
       "contrastBorder": "#0000",
-      "contrastActiveBorder": "#777777",
+      "contrastActiveBorder": "#77777700",
+      "editor.background": "#0d0d0d",
       "editor.lineHighlightBorder": "#0000", // #RGBA
       "editorIndentGuide.background1": "#727272", // Color of normal indent guides (hex with optional transparency)
       "editorIndentGuide.activeBackground1": "#0fff7f", // Color of the active indent guide (where your cursor is)
+      "sideBar.background": "#0d0d0d",
       "sideBar.border": "#777777",
       "panel.border": "#777777",
       "panelTitle.activeBorder": "#777777",
-      // "statusBar.background": "#252525",
+      "statusBar.background": "#0d0d0d",
       "statusBar.border": "#404040",
+      "sideBarSectionHeader.background": "#202020",
+
+      // Sidebar explorer custom color
+      "list.activeSelectionBackground": "#3d3d3d", // Background color when the Explorer is focused and file is selected
+      "list.inactiveSelectionBackground": "#0000", // Background color when the Explorer is not focused but file is selected
+      "list.activeSelectionForeground": "#FFFFFF", // Text color for the active file name
+      "list.inactiveSelectionForeground": "#CCCCCC", // Text color for the inactive file name
 
       // Integrated Terminal: Material Darker 
       // Themes: https://glitchbone.github.io/vscode-base16-term/#/material-darker
-      "terminal.background":"#212121",
+      "terminal.background":"#0d0d0d",
       "terminal.foreground":"#EEFFFF",
       "terminalCursor.background":"#EEFFFF",
       "terminalCursor.foreground":"#EEFFFF",
