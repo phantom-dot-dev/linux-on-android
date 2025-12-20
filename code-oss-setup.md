@@ -2,7 +2,7 @@
 Add the to the settings.json
 
 ```json
-  // Custom (Modify some default themes)
+// Custom (Modify some default themes)
   // These are applied only for High Contrast Dark Theme
   // Collected from different places and personalized
   "workbench.colorCustomizations": {
@@ -10,9 +10,28 @@ Add the to the settings.json
       "contrastBorder": "#0000",
       "contrastActiveBorder": "#77777700",
       "editor.background": "#0d0d0d",
+      "editor.lineHighlightBackground": "#1d1d0d",
+      "editorLineNumber.activeForeground": "#00ffff",
       "editor.lineHighlightBorder": "#0000", // #RGBA
       "editorIndentGuide.background1": "#727272", // Color of normal indent guides (hex with optional transparency)
       "editorIndentGuide.activeBackground1": "#0fff7f", // Color of the active indent guide (where your cursor is)
+
+      // Errors and Warnings
+      "editorError.background": "#0000",
+      "editorError.foreground": "#727272",
+      "editorWarning.foreground": "#727272",
+      "editorWarning.background": "#ff000000",
+
+      // Intelligence
+      "editorSuggestWidget.selectedBackground": "#72727277",
+
+
+      // Selection
+      "editor.selectionBackground": "#77777777",
+      "editor.selectionForeground": "#ffffff",
+
+
+      
       "sideBar.background": "#0d0d0d",
       "sideBar.border": "#777777",
       "panel.border": "#777777",
@@ -50,5 +69,5 @@ Add the to the settings.json
       "terminal.ansiWhite":"#EEFFFF",
       "terminal.ansiYellow":"#FFCB6B"
     }
-  }
+  },
 ```
