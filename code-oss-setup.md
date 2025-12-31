@@ -71,3 +71,10 @@ Add the to the settings.json
     }
   },
 ```
+
+
+### Firefox Vertical Tab `Sidebar toggle`:
+`ctrl + alt + z`
+
+### VSCode left sidebar (Activity View):
+To make more horizontal space use `view > appearance > activity bar position > top`
