@@ -7,6 +7,7 @@ Add the to the settings.json
   // Collected from different places and personalized
   "workbench.colorCustomizations": {
     "[Default High Contrast]": {
+      "[Default High Contrast]": {
       "contrastBorder": "#0000",
       "contrastActiveBorder": "#77777700",
       "editor.background": "#0d0d0d",
@@ -24,6 +25,10 @@ Add the to the settings.json
 
       // Intelligence
       "editorSuggestWidget.selectedBackground": "#72727277",
+
+      // ctrl + p | quick open menu | change focus colors
+      "quickInputList.focusBackground": "#34495e",
+      "quickInputList.focusForeground": "#ffffff",
 
 
       // Selection
@@ -50,8 +55,6 @@ Add the to the settings.json
       // Themes: https://glitchbone.github.io/vscode-base16-term/#/material-darker
       "terminal.background":"#0d0d0d",
       "terminal.foreground":"#EEFFFF",
-      "terminalCursor.background":"#EEFFFF",
-      "terminalCursor.foreground":"#EEFFFF",
       "terminal.ansiBlack":"#212121",
       "terminal.ansiBlue":"#82AAFF",
       "terminal.ansiBrightBlack":"#4A4A4A",
@@ -67,7 +70,11 @@ Add the to the settings.json
       "terminal.ansiMagenta":"#C792EA",
       "terminal.ansiRed":"#F07178",
       "terminal.ansiWhite":"#EEFFFF",
-      "terminal.ansiYellow":"#FFCB6B"
+      "terminal.ansiYellow":"#FFCB6B",
+
+      // Terminal active cursor tranparency
+      "terminalCursor.foreground": "#ffffff64",
+      "terminalCursor.background": "#FFFFFF"
     }
   },
 ```
@@ -125,6 +132,10 @@ To make more horizontal space use `view > appearance > activity bar position > t
       // Intelligence
       "editorSuggestWidget.selectedBackground": "#72727277",
 
+      // ctrl + p | quick open menu | change focus colors
+      "quickInputList.focusBackground": "#34495e",
+      "quickInputList.focusForeground": "#ffffff",
+
 
       // Selection
       "editor.selectionBackground": "#77777777",
@@ -150,8 +161,6 @@ To make more horizontal space use `view > appearance > activity bar position > t
       // Themes: https://glitchbone.github.io/vscode-base16-term/#/material-darker
       "terminal.background":"#0d0d0d",
       "terminal.foreground":"#EEFFFF",
-      "terminalCursor.background":"#EEFFFF",
-      "terminalCursor.foreground":"#EEFFFF",
       "terminal.ansiBlack":"#212121",
       "terminal.ansiBlue":"#82AAFF",
       "terminal.ansiBrightBlack":"#4A4A4A",
@@ -167,7 +176,11 @@ To make more horizontal space use `view > appearance > activity bar position > t
       "terminal.ansiMagenta":"#C792EA",
       "terminal.ansiRed":"#F07178",
       "terminal.ansiWhite":"#EEFFFF",
-      "terminal.ansiYellow":"#FFCB6B"
+      "terminal.ansiYellow":"#FFCB6B",
+
+      // Terminal active cursor tranparency
+      "terminalCursor.foreground": "#ffffff64",
+      "terminalCursor.background": "#FFFFFF"
     }
   },
   "editor.fontSize": 12,
