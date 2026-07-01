@@ -1,0 +1,120 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+source /data/data/com.termux/files/usr/etc/termux-desktop/common_functions
+
+usb_mounts() {
+  local candidates seen="" media uuid acc
+  candidates=$(awk '($2 ~ "^/mnt/media_rw/[0-9A-Fa-f-]+$") && ($3 ~ /vfat|exfat|ntfs|fuseblk/) {print $2}' /proc/mounts | sort -u)
+  while IFS= read -r media; do
+    [ -d "$media" ] || continue
+    uuid="${media##*/}"
+    acc="/storage/${uuid}"; [ -r "$acc" ] || acc="$media"
+    [ -r "$acc" ] || continue
+    case ",$seen," in *",$uuid,"*) ;; *) printf '%s\n' "$acc"; seen="${seen},${uuid}";; esac
+  done <<< "$candidates"
+}
+
+urldecode() { local s="${1//+/ }"; printf '%b' "${s//%/\\x}"; }
+
+normalize_arg() {
+  local a="$1"
+  case "$a" in file://*) a="${a#file://}";; esac
+  if [[ "$a" == *%* || "$a" == *+* ]]; then a="$(urldecode "$a")"; fi
+  echo "$a"
+}
+
+enum_media=0
+
+usb_bind_args() {
+  if [ -n "${PDRUN_DISABLE_USB_BIND:-}" ]; then printf ''; return 0; fi
+
+  local args="--bind /storage:/storage --bind /mnt/media_rw:/mnt/media_rw"
+
+  local list; if [ -n "${PDRUN_USB_BIND_PATH:-}" ]; then list="${PDRUN_USB_BIND_PATH}"; else list="$(usb_mounts 2>/dev/null)"; fi
+  if [ -n "$list" ]; then
+    local include="${PDRUN_USB_INCLUDE:-}"; local exclude="${PDRUN_USB_EXCLUDE:-}"; local limit="${PDRUN_USB_LIMIT:-0}"
+    local count=0
+    while IFS= read -r p; do
+      [ -n "$p" ] || continue
+      local uuid="${p##*/}"
+      if [ -n "$include" ]; then case ",$include," in *",$uuid,"*) ;; *) continue;; esac; fi
+      if [ -n "$exclude" ]; then case ",$exclude," in *",$uuid,"*) continue;; esac; fi
+      if [ "$limit" -gt 0 ] && [ "$count" -ge "$limit" ]; then break; fi
+      args="${args} --bind ${p}:/mnt/usb/${uuid}"
+      count=$((count+1))
+    done <<< "$list"
+  fi
+
+  if [ "${enum_media:-0}" -eq 1 ] || [[ "${PDRUN_MEDIA_RW_ENUM:-}" =~ ^(1|true|yes)$ ]]; then
+    while IFS= read -r p; do
+      [ -n "$p" ] || continue
+      args="${args} --bind ${p}:${p}"
+      uuid="${p##*/}"; st="/storage/${uuid}"
+      [ -r "$st" ] && args="${args} --bind ${st}:${st}"
+    done <<<"$(usb_mounts 2>/dev/null | sed -E 's|^/storage/([0-9A-Fa-f-]+)$|/mnt/media_rw/\\1|')"
+  fi
+
+  printf '%s' "$args"
+}
+
+if [[ "proot" == "proot" ]]; then
+# This code block is taken from:- https://github.com/termux/proot-distro/blob/master/proot-distro.sh#L172C1-L184C1
+TRACER_PID=$(grep TracerPid "/proc/$$/status" | cut -d $'\t' -f 2)
+if [ "$TRACER_PID" != 0 ]; then
+TRACER_NAME=$(grep Name "/proc/${TRACER_PID}/status" | cut -d $'\t' -f 2)
+if [ "$TRACER_NAME" = "proot" ]; then
+print_msg
+print_failed "pdrun should not be executed under PRoot.${W}"
+exit 1
+fi
+unset TRACER_NAME
+fi
+unset TRACER_PID
+fi
+selected_pd_hw_method="VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json MESA_LOADER_DRIVER_OVERRIDE=zink TU_DEBUG=noconform"
+xhost + > /dev/null 2>&1
+
+use_root=false
+use_nogpu=false
+args=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --root)
+      use_root=true
+      shift
+      ;;
+    --nogpu)
+      use_nogpu=true
+      shift
+      ;;
+    --help|-h)
+cat <<HELP_EOF
+Usage: pdrun [--root] [--nogpu] COMMAND
+
+Options:
+--root     - run as root user
+--nogpu    - disable GPU acceleration
+HELP_EOF
+exit 0
+;;
+    *)
+      args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [ "$use_root" = true ]; then
+  user_arg="--user root"
+else
+  user_arg="--user mainuldip"
+fi
+
+if [ "$use_nogpu" = true ]; then
+  gpu_env="env LIBGL_ALWAYS_SOFTWARE=1 MESA_LOADER_DRIVER_OVERRIDE=llvmpipe GALLIUM_DRIVER=llvmpipe"
+else
+  gpu_env="env $selected_pd_hw_method"
+fi
+
+"proot"-distro login $(usb_bind_args) $user_arg "debian" --shared-tmp --shared-home -- env DISPLAY=$(echo $DISPLAY) XDG_RUNTIME_DIR=${TMPDIR} $gpu_env sh -lc 'umask 022; exec "$@"' _ "${args[@]}"

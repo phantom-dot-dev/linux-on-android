@@ -34,7 +34,7 @@ pkill -9 xfce-* > /dev/null 2>&1
 pkill -9 dbus-* > /dev/null 2>&1
 pkill -f com.termux.x11 > /dev/null 2>&1
 	if [[ ! -n "$termux_x11_pid" ]] || [[ ! -n "$de_pid" ]]; then
-	echo -e "[0m[32mTermux:X11 Stopped Successfully [0m"
+	echo -e "[0m[32mTermux:X11 Stopped Successfully [0m"
     [[ -f "/data/data/com.termux/files/home/.xstartup" ]] && rm -rf "/data/data/com.termux/files/home/.xstartup"
 	fi
 elif [[ "$1" == "-f" ]] || [[ "$1" == "--force" ]]; then
@@ -43,7 +43,7 @@ pkill -9 xfce-* > /dev/null 2>&1
 killall virgl_test_server > /dev/null 2>&1
 pkill -9 pulseaudio > /dev/null 2>&1
 pkill -9 dbus-* > /dev/null 2>&1
-echo -e "[0m[32mTermux:X11 Successfully Force Stopped [0m"
+echo -e "[0m[32mTermux:X11 Successfully Force Stopped [0m"
 [[ -f "/data/data/com.termux/files/home/.xstartup" ]] && rm -rf "/data/data/com.termux/files/home/.xstartup"
 elif [[ "$1" == "-h" ]]; then
 echo -e "tx11stop       to stop termux:x11"

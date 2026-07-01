@@ -2,26 +2,17 @@
 
 source /data/data/com.termux/files/usr/etc/termux-desktop/common_functions
 
-if [[ ! -f "/data/data/com.termux/files/usr/etc/termux-desktop/configuration.conf" ]]; then
-print_failed " Configuration file /data/data/com.termux/files/usr/etc/termux-desktop/configuration.conf not found"
-exit 0
-fi
-# shellcheck disable=SC1090
-source "/data/data/com.termux/files/usr/etc/termux-desktop/configuration.conf"
-
-initialize_server_cmd=" "
-
 # This code block is taken from:- https://github.com/termux/proot-distro/blob/master/proot-distro.sh#L172C1-L184C1
 TRACER_PID=$(grep TracerPid "/proc/$$/status" | cut -d $'\t' -f 2)
 if [ "$TRACER_PID" != 0 ]; then
-TRACER_NAME=$(grep Name "/proc/${TRACER_PID}/status" | cut -d $'\t' -f 2)
-if [ "$TRACER_NAME" = "proot" ]; then
-print_msg
-print_failed "tx11start command should not be executed under PRoot.${W}"
-print_msg
-exit 1
-fi
-unset TRACER_NAME
+	TRACER_NAME=$(grep Name "/proc/${TRACER_PID}/status" | cut -d $'\t' -f 2)
+	if [ "$TRACER_NAME" = "proot" ]; then
+		msg
+		print_failed "tx11start command should not be executed under PRoot.${W}"
+		msg
+		exit 1
+	fi
+	unset TRACER_NAME
 fi
 unset TRACER_PID
 
@@ -34,16 +25,16 @@ unset TRACER_PID
 
     # Function to show help
     function show_tx11start_help() {
-cat <<HELP_EOF
-tx11start                               - start Termux:X11 with GPU acceleration
-tx11start --nogpu                       - start without GPU acceleration
-tx11start --nodbus                      - start without dbus
-tx11start --legacy                      - start with -legacy-drawing
-tx11start --debug                       - show debug log
-tx11start --xstartup "xstartup-name"    - launch another desktop environment
-HELP_EOF
-exit 0
-}
+      echo -e "
+tx11start                               - Start Termux:X11 with GPU acceleration
+tx11start --nogpu                       - Start without GPU acceleration
+tx11start --nodbus                      - Start without dbus
+tx11start --legacy                      - Start with -legacy-drawing
+tx11start --debug                       - Show debug log
+tx11start --xstartup "xstartup-name"    - Launch another desktop environment
+"
+      exit 0
+    }
 
     # Parse arguments
     while (($# >= 1)); do
@@ -88,56 +79,27 @@ exit 0
     export DISPLAY=:0
 
     # Start pulseaudio unless --help was given
-if [[ "$1" != "--help" && "$1" != "-h" ]]; then
-  termux-wake-lock
-
-  if $use_debug; then
-    pulseaudio -k 2>&1 || true
-    pkill -9 pulseaudio 2>&1 || true
-  else
-    pulseaudio -k >/dev/null 2>&1 || true
-    pkill -9 pulseaudio >/dev/null 2>&1 || true
-  fi
-
-  if $use_debug; then
-    rm -rf "/data/data/com.termux/files/home/.config/pulse/"*-runtime/
-  else
-    rm -rf "/data/data/com.termux/files/home/.config/pulse/"*-runtime/ >/dev/null 2>&1
-  fi
-
-  if $use_debug; then
-    pulseaudio --start --exit-idle-time=-1
-pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1
-  else
-    pulseaudio --start --exit-idle-time=-1 >/dev/null 2>&1
-pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1 >/dev/null 2>&1
-  fi
-
-  if ! pulseaudio --check >/dev/null 2>&1; then
-      print_failed "pulseaudio failed to start (likely already running or stale runtime state)." >&2
-      pgrep -a pulseaudio >&2 || true
-    exit 1
-  fi
-
-  if [[ "$enable_mic" == "y" ]]; then
-  if $use_debug; then
-  pactl load-module module-sles-source
-  else
-  pactl load-module module-sles-source >/dev/null 2>&1
-  fi
-  fi
-fi
+    if [[ "$1" != "--help" ]]; then
+      termux-wake-lock
+      if $use_debug; then
+          rm -rf ~/.config/pulse/*-runtime/pid
+      else
+          rm -rf ~/.config/pulse/*-runtime/pid >/dev/null 2>&1
+      fi
+      # pulseaudio --start --load="module-aaudio-sink" --exit-idle-time=-1
+      pulseaudio --start --exit-idle-time=-1
+      pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1
+      if $use_debug; then
+        pactl load-module module-sles-source
+      else
+        pactl load-module module-sles-source >/dev/null 2>&1
+      fi
+    fi
 
     # Set environment variables if NOT using --nogpu
     if ! $use_nogpu; then
-      export MESA_NO_ERROR=1 GALLIUM_DRIVER=zink MESA_GL_VERSION_OVERRIDE=4.3COMPAT MESA_GLES_VERSION_OVERRIDE=3.2 VK_ICD_FILENAMES=/data/data/com.termux/files/usr/share/vulkan/icd.d/wrapper_icd.aarch64.json MESA_SHADER_CACHE=512MB MESA_SHADER_CACHE_DISABLE=false vblank_mode=0
-      if [[ -n "${initialize_server_cmd// /}" ]]; then
-        if $use_debug; then
-          eval "$initialize_server_cmd" &
-        else
-          eval "$initialize_server_cmd" >/dev/null 2>&1 &
-        fi
-      fi
+      export MESA_NO_ERROR=1 MESA_GL_VERSION_OVERRIDE=4.3COMPAT MESA_GLES_VERSION_OVERRIDE=3.2
+      export VK_ICD_FILENAMES=/data/data/com.termux/files/usr/share/vulkan/icd.d/wrapper_icd.aarch64.json MESA_SHADER_CACHE=512MB MESA_SHADER_CACHE_DISABLE=false vblank_mode=0 GALLIUM_DRIVER=zink
   else
         export LIBGL_ALWAYS_SOFTWARE=1 MESA_LOADER_DRIVER_OVERRIDE=llvmpipe GALLIUM_DRIVER=llvmpipe
     fi
@@ -191,9 +153,9 @@ fi
 sleep 5
 process_id=$(ps aux | grep '[x]fce4-screensaver' | awk '{print $2}')
 if [[ -n "$process_id" ]]; then
-if $use_debug; then
-kill "$process_id"
-else
-     kill "$process_id" > /dev/null 2>&1
-fi
+	if $use_debug; then
+		kill "$process_id"
+	else
+    	kill "$process_id" > /dev/null 2>&1
+	fi
 fi
